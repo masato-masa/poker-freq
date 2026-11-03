@@ -1,3 +1,5 @@
+import { showCard } from '@/lib/board';
+import { estimate } from '@/lib/hand';
 import {
   STACK_FILTERS,
   actionLabel,
@@ -12,7 +14,16 @@ import {
   type State,
 } from '@/lib/engine';
 
+/** 手札別の推定の表示を、範囲(lo〜hi)で */
+function rangeText(lo: number, hi: number): string {
+  const f = (x: number) => Math.round(100 * x);
+  if (hi < 0.005) return '0%';
+  if (hi < 0.01) return '<1%';
+  return f(lo) === f(hi) ? `${f(hi)}%` : `${f(lo)}〜${f(hi)}%`;
+}
+
 interface PanelProps {
+  hand?: { cards: string[]; cls: string } | null;
   index: PreflopIndex;
   state: State;
   seat: number | null;
@@ -29,7 +40,7 @@ function kindOf(code: string): 'fold' | 'call' | 'raise' {
   return code === 'f' ? 'fold' : code === 'c' || code === 'x' ? 'call' : 'raise';
 }
 
-export function Panel({ index, state, seat, stack, onCommit, onUndo, onReset, canUndo }: PanelProps) {
+export function Panel({ hand, index, state, seat, stack, onCommit, onUndo, onReset, canUndo }: PanelProps) {
   const names = seatNames(state.n);
   const buttons = (
     <div className="actions">
@@ -59,6 +70,10 @@ export function Panel({ index, state, seat, stack, onCommit, onUndo, onReset, ca
   const n = total(sized);
   const sum = summarize(coarse);
   const stackLabel = STACK_FILTERS.find((f) => f.id === stack)?.label ?? '';
+  // 手札別の推定は、件数が十分ならサイズつきの頻度、足りなければサイズを問わない頻度から計算する
+  const baseCounts = n >= 30 ? sized : sum.n >= 30 ? coarse : null;
+  const opts = options(state, seat);
+  const est = hand ? estimate(baseCounts, hand.cls, opts) : null;
 
   return (
     <div className="panel">
@@ -71,21 +86,37 @@ export function Panel({ index, state, seat, stack, onCommit, onUndo, onReset, ca
           : `この流れで ${n.toLocaleString()} 回の判断${n < 30 ? '（少ない。参考程度）' : ''}`}
       </p>
 
+      {hand && (
+        <p className="note est">
+          手札 {hand.cards.map(showCard).join(' ')}（{hand.cls}）の<b>推定</b>
+          {est ? '。右の数字が手札別、小さい数字が全員の頻度です。' : '。この場面は件数が少なく、推定できません。'}
+        </p>
+      )}
+
       <ul className="rows">
-        {options(state, seat).map((code) => {
+        {opts.map((code) => {
           const count = sized?.[code] ?? 0;
           const p = n > 0 ? count / n : 0;
+          const e = est?.[code];
           return (
             <li key={code}>
               <button type="button" className={`row ${kindOf(code)}`} onClick={() => onCommit(seat, code)}>
-                <span className="bar" style={{ width: `${Math.max(0, p) * 100}%` }} />
-                <span className="lab">{actionLabel(code, state.nraise, seat, state.n)}</span>
-                <span className="val">{n > 0 ? pct(p) : '—'}</span>
+                <span className="bar" style={{ width: `${(e ? e.mid : Math.max(0, p)) * 100}%` }} />
+                <span className="lab">
+                  {actionLabel(code, state.nraise, seat, state.n)}
+                  {e && <small className="all">全員 {n > 0 ? pct(p) : '—'}</small>}
+                </span>
+                <span className="val">{e ? rangeText(e.lo, e.hi) : n > 0 ? pct(p) : '—'}</span>
               </button>
             </li>
           );
         })}
       </ul>
+      {est && (
+        <p className="note sub2">
+          手札別の数字は推定です。データでは、手札が見えるのはショーダウンまで行った人だけで、強い手に偏るため、手札の強さの順位から計算しています（範囲は 2 通りの仮定の幅。フォールドの数字は特に不確かです）。
+        </p>
+      )}
 
       {sum.n > 0 && (
         <p className="note sub2">

@@ -14,6 +14,7 @@ import {
 interface PostPanelProps {
   index: PostIndex | null;
   loading: boolean;
+  hasHand: boolean;
   post: PostState;
   seat: number;
   stack: StackFilter;
@@ -33,7 +34,7 @@ const LEVELS: { id: Level; label: string; help: string }[] = [
   { id: 'coarse', label: '盤面を問わない', help: 'ボードは問わず、この街の流れと位置関係だけ' },
 ];
 
-export function PostPanel({ index, loading, post, seat, stack, onCommit, onUndo, onReset }: PostPanelProps) {
+export function PostPanel({ index, loading, hasHand, post, seat, stack, onCommit, onUndo, onReset }: PostPanelProps) {
   const [chosen, setChosen] = useState<Level | null>(null);
   const names = seatNames(post.n);
   const buttons = (
@@ -81,6 +82,10 @@ export function PostPanel({ index, loading, post, seat, stack, onCommit, onUndo,
         ボード: {describeTex(post.texF)} ／ {post.cls === 'LIMP' ? 'リンプポット' : post.cls === 'SRP' ? 'シングルレイズ' : post.cls === '3BP' ? '3bet ポット' : '4bet 以上のポット'}
         {' ／ '}残り {post.folded.filter((f) => !f).length} 人
       </p>
+
+      {hasHand && (
+        <p className="note est">手札別の推定はプリフロップだけです。フロップ以降は、全員の頻度を出しています。</p>
+      )}
 
       <div className="seg lv" role="group" aria-label="条件の細かさ">
         {LEVELS.map((l) => (

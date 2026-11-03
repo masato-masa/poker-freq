@@ -480,3 +480,50 @@ button {
     font-size: 11px;
   }
 }
+
+/* ---- 手札 ---- */
+.handbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.handbtn {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px dashed var(--gold);
+  background: transparent;
+  color: var(--gold-hi);
+  font-size: 14px;
+  cursor: pointer;
+}
+.handbtn.set {
+  border-style: solid;
+  background: var(--panel);
+  color: var(--ink);
+}
+.handbtn .cards {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.handclear {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  cursor: pointer;
+}
+.note.est b {
+  color: var(--gold-hi);
+}
+.row .lab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.row .lab .all {
+  font-size: 11px;
+  color: var(--ink-2);
+}

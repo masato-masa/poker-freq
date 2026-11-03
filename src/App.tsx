@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { showCard } from '@/lib/board';
+import { handClass } from '@/lib/hand';
 import {
   STACK_FILTERS,
   STAKES,
@@ -55,6 +56,9 @@ export function App() {
   const [stake, setStake] = useState<Stake>('all');
   const [steps, setSteps] = useState<Step[]>(newGame(9));
   const [picked, setPicked] = useState<number | null>(null);
+  /** 自分の手札（2 枚）。履歴には含めず、どの局面でも保つ */
+  const [hand, setHand] = useState<string[] | null>(null);
+  const [pickingHand, setPickingHand] = useState(false);
   const cache = useRef(new Map<Stake, PreflopIndex>());
   const postCache = useRef(new Map<Stake, PostIndex>());
 
@@ -211,16 +215,32 @@ export function App() {
     </div>
   );
 
+  const handInfo = hand ? { cards: hand, cls: handClass(hand[0], hand[1]) } : null;
+  const boardCards = post?.board ?? [];
+
   let panel;
-  if (phase === 'flop') {
-    panel = <CardPicker key="flop" title="フロップを選ぶ" need={3} used={[]} onDone={deal} />;
+  if (pickingHand) {
+    panel = (
+      <CardPicker
+        key="hand"
+        title="自分の手札を選ぶ"
+        need={2}
+        used={boardCards}
+        onDone={(cards) => {
+          setHand(cards);
+          setPickingHand(false);
+        }}
+      />
+    );
+  } else if (phase === 'flop') {
+    panel = <CardPicker key="flop" title="フロップを選ぶ" need={3} used={hand ?? []} onDone={deal} />;
   } else if (phase === 'card' && post) {
     panel = (
       <CardPicker
         key={post.street}
         title={post.street === 'flop' ? 'ターンを選ぶ' : 'リバーを選ぶ'}
         need={1}
-        used={post.board}
+        used={[...(hand ?? []), ...post.board]}
         onDone={deal}
       />
     );
@@ -230,6 +250,7 @@ export function App() {
         key={steps.length}
         index={postIndex}
         loading={!error}
+        hasHand={hand !== null}
         post={post}
         seat={seat}
         stack={stack}
@@ -254,6 +275,7 @@ export function App() {
   } else if (index) {
     panel = (
       <Panel
+        hand={handInfo}
         index={index}
         state={pre}
         seat={seat}
@@ -300,6 +322,23 @@ export function App() {
           ))}
         </div>
       </section>
+
+      <div className="handbar">
+        <button type="button" className={`handbtn${hand ? ' set' : ''}`} onClick={() => setPickingHand((v) => !v)}>
+          {hand ? (
+            <>
+              手札 <span className="cards">{hand.map(showCard).join(' ')}</span>（{handInfo!.cls}）
+            </>
+          ) : (
+            '自分の手札を入れる'
+          )}
+        </button>
+        {hand && (
+          <button type="button" className="handclear" onClick={() => setHand(null)}>
+            クリア
+          </button>
+        )}
+      </div>
 
       <main className="main">
         <div>
