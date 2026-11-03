@@ -370,3 +370,113 @@ button {
     font-size: 11px;
   }
 }
+
+/* ---- ボード・カード・流れ ---- */
+.board {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.card {
+  min-width: 34px;
+  padding: 4px 5px;
+  border-radius: 6px;
+  background: #f3efe3;
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.1;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.card.red {
+  color: #c62828;
+}
+.flow {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flow li {
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.seg.lv {
+  display: flex;
+  width: 100%;
+  margin: 8px 0 4px;
+}
+.seg.lv button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  height: 44px;
+  font-size: 13px;
+  line-height: 1.15;
+  align-items: center;
+  justify-content: center;
+}
+.seg.lv button small {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.picker {
+  display: grid;
+  gap: 5px;
+}
+.prow {
+  display: grid;
+  grid-template-columns: 22px repeat(13, 1fr);
+  gap: 3px;
+  align-items: center;
+}
+.prow .smark {
+  font-size: 18px;
+  text-align: center;
+  color: var(--ink);
+}
+.prow.red .smark {
+  color: #ff6b6b;
+}
+.prow button {
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #102a24;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.prow.red button {
+  color: #ff8a8a;
+}
+.prow button.on {
+  background: var(--gold);
+  color: #20180a;
+  border-color: var(--gold-hi);
+}
+.prow button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+@media (max-width: 420px) {
+  .prow {
+    grid-template-columns: 18px repeat(13, 1fr);
+    gap: 2px;
+  }
+  .prow button {
+    height: 34px;
+    font-size: 11px;
+  }
+}

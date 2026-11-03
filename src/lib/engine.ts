@@ -211,8 +211,10 @@ export function shortLabel(code: string): string {
       return 'CALL';
     case 'oAI':
     case 'rAI':
+    case 'bAI':
       return 'ALL-IN';
   }
+  if (code.startsWith('b')) return `${code.slice(1)}%`;
   if (code.startsWith('o')) return `${code.slice(1)}bb`;
   return code.slice(1).replace('x', '×');
 }
