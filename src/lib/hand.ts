@@ -13,7 +13,7 @@ export const K_LO = 1.0;
 export const K_HI = 1.5;
 
 const RK = '23456789TJQKA';
-const zTable = Z as Record<string, number>;
+export const zTable = Z as Record<string, number>;
 
 /** 2 枚（'Ah', 'Th'）→ 手札クラス（'ATs'）。同じカードは不可 */
 export function handClass(a: string, b: string): string {
@@ -24,10 +24,20 @@ export function handClass(a: string, b: string): string {
 }
 
 const CLASSES = Object.keys(zTable);
+
+/** カード id(ランク*4+スート)の 2 枚 → 手札クラス */
+export function classOfIds(a: number, b: number): string {
+  let ra = a >> 2;
+  let rb = b >> 2;
+  let sa = a & 3;
+  let sb = b & 3;
+  if (ra < rb) [ra, rb, sa, sb] = [rb, ra, sb, sa];
+  return ra === rb ? `${RK[ra]}${RK[rb]}` : `${RK[ra]}${RK[rb]}${sa === sb ? 's' : 'o'}`;
+}
 const prior = (k: string): number => (k.length === 2 ? 6 : k[2] === 's' ? 4 : 12) / 1326;
 const sig = (x: number): number => 1 / (1 + Math.exp(-x));
 
-function theta(k: number, target: number): number {
+export function theta(k: number, target: number): number {
   let lo = -60;
   let hi = 60;
   for (let i = 0; i < 100; i++) {

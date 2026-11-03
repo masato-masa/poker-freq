@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { showCard } from '@/lib/board';
 import { handClass } from '@/lib/hand';
+import { cardId } from '@/lib/strength';
+import type { Ev } from '@/lib/postHand';
 import {
   STACK_FILTERS,
   STAKES,
@@ -11,18 +13,22 @@ import {
   candidates,
   initState,
   liveSeats,
+  lookup,
   seatNames,
+  total,
   type PreflopIndex,
   type StackFilter,
   type Stake,
   type State,
 } from '@/lib/engine';
 import {
-  applyPost,
+  applyPostSteps,
   candidatesPost,
   labelPost,
   liveOf,
+  lookupPost,
   nextStreet,
+  postKeys,
   roundDone,
   startPost,
   type PostIndex,
@@ -39,13 +45,22 @@ interface Game {
   post: PostState | null;
 }
 
+/** ある席が選んだ行動（暗黙のチェックも含む）と、その直前の状態。手札別の推定で、その席の範囲を追うのに使う */
+interface SeatEvent {
+  seat: number;
+  code: string;
+  pre?: State;
+  post?: PostState;
+}
+
 /** 選んだ行動の履歴。game はその行動を選んだあとの状態。 */
 interface Step {
   game: Game;
   text: string;
+  events: SeatEvent[];
 }
 
-const newGame = (n: number): Step[] => [{ game: { pre: initState(n), post: null }, text: '' }];
+const newGame = (n: number): Step[] => [{ game: { pre: initState(n), post: null }, text: '', events: [] }];
 
 export function App() {
   const [index, setIndex] = useState<PreflopIndex | null>(null);
@@ -143,16 +158,17 @@ export function App() {
     setPicked(null);
   }, []);
 
-  const push = useCallback((game: Game, text: string) => {
-    setSteps((st) => [...st, { game, text }]);
+  const push = useCallback((game: Game, text: string, events: SeatEvent[] = []) => {
+    setSteps((st) => [...st, { game, text, events }]);
     setPicked(null);
   }, []);
 
   const commit = (s: number, code: string) => {
     if (post) {
-      push({ pre, post: applyPost(post, s, code) }, `${names[s]} ${labelPost(code)}`);
+      const { next, events } = applyPostSteps(post, s, code);
+      push({ pre, post: next }, `${names[s]} ${labelPost(code)}`, events.map((e) => ({ seat: e.seat, code: e.code, post: e.before })));
     } else {
-      push({ pre: apply(pre, s, code), post: null }, `${names[s]} ${actionLabel(code, pre.nraise, s, n)}`);
+      push({ pre: apply(pre, s, code), post: null }, `${names[s]} ${actionLabel(code, pre.nraise, s, n)}`, [{ seat: s, code, pre }]);
     }
   };
 
@@ -203,6 +219,34 @@ export function App() {
               : '',
       };
 
+  // 手札別の推定に使う、その席のここまでの行動。件数が十分な、いちばん細かい頻度を使う
+  const trail = useMemo<Ev[]>(() => {
+    if (seat === null) return [];
+    const out: Ev[] = [];
+    for (const st of steps) {
+      for (const e of st.events) {
+        if (e.seat !== seat || e.code === 'f') continue;
+        if (e.pre) {
+          if (!index) continue;
+          const sized = lookup(index, 'S', e.pre, e.seat, stack);
+          const coarse = lookup(index, 'C', e.pre, e.seat, stack);
+          out.push({ kind: 'pre', counts: total(sized) >= 30 ? sized : total(coarse) >= 30 ? coarse : null, code: e.code });
+        } else if (e.post) {
+          if (!postIndex) continue;
+          const k = postKeys(e.post, e.seat, stack);
+          const cs = [k.fine, k.mid, k.coarse].map((x) => lookupPost(postIndex, x));
+          out.push({
+            kind: 'post',
+            counts: cs.find((c) => total(c) >= 30) ?? null,
+            board: e.post.board.map(cardId),
+            code: e.code,
+          });
+        }
+      }
+    }
+    return out;
+  }, [steps, seat, index, postIndex, stack]);
+
   const canUndo = steps.length > 1;
   const resetButtons = (
     <div className="actions">
@@ -250,7 +294,8 @@ export function App() {
         key={steps.length}
         index={postIndex}
         loading={!error}
-        hasHand={hand !== null}
+        hero={hand ? (hand.map(cardId).sort((a, b) => a - b) as [number, number]) : null}
+        trail={trail}
         post={post}
         seat={seat}
         stack={stack}

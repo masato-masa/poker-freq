@@ -77,22 +77,41 @@ export function optionsPost(s: PostState): string[] {
   return s.facing ? ['f', 'c', ...POST_RAISE_CODES] : ['x', ...BET_CODES];
 }
 
+/** applyPost の 1 手ごとの記録。範囲の追跡に使う（暗黙のチェック・フォールドも含む） */
+export interface PostEvent {
+  seat: number;
+  code: string;
+  /** この行動を選ぶ直前の状態 */
+  before: PostState;
+}
+
 /** seat が code を選ぶ。先に動くはずだった席は、ベットがあればフォールド、なければチェックとみなす。 */
-export function applyPost(s: PostState, seat: number, code: string): PostState {
+export function applyPostSteps(s: PostState, seat: number, code: string): { next: PostState; events: PostEvent[] } {
   const at = s.needs.indexOf(seat);
   if (at < 0) throw new Error(`seat ${seat} cannot act`);
-  const next: PostState = { ...s, folded: [...s.folded], line: [...s.line], acted: [...s.acted] };
   const implicit = s.facing ? 'f' : 'x';
+  const events: PostEvent[] = [];
+  let cur = s;
   for (const q of s.needs.slice(0, at)) {
-    next.acted[q] = implicit;
-    next.line.push(implicit);
-    if (implicit === 'f') next.folded[q] = true;
+    events.push({ seat: q, code: implicit, before: cur });
+    cur = step(cur, q, implicit);
   }
+  events.push({ seat, code, before: cur });
+  return { next: step(cur, seat, code), events };
+}
+
+export function applyPost(s: PostState, seat: number, code: string): PostState {
+  return applyPostSteps(s, seat, code).next;
+}
+
+/** needs の先頭の席が 1 手指す */
+function step(s: PostState, seat: number, code: string): PostState {
+  if (s.needs[0] !== seat) throw new Error(`seat ${seat} is not next`);
+  const next: PostState = { ...s, folded: [...s.folded], line: [...s.line, code], acted: [...s.acted] };
   next.acted[seat] = code;
-  next.line.push(code);
   if (code === 'f') next.folded[seat] = true;
   if (code === 'f' || code === 'c' || code === 'x') {
-    next.needs = s.needs.slice(at + 1);
+    next.needs = s.needs.slice(1);
     return next;
   }
   // ベット／レイズ: 他の生きている席が、この席の次から順に、もう一度動く

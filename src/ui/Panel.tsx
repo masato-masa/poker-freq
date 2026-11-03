@@ -1,5 +1,6 @@
 import { showCard } from '@/lib/board';
 import { estimate } from '@/lib/hand';
+import { pct, rangeText } from './format';
 import {
   STACK_FILTERS,
   actionLabel,
@@ -14,14 +15,6 @@ import {
   type State,
 } from '@/lib/engine';
 
-/** 手札別の推定の表示を、範囲(lo〜hi)で */
-function rangeText(lo: number, hi: number): string {
-  const f = (x: number) => Math.round(100 * x);
-  if (hi < 0.005) return '0%';
-  if (hi < 0.01) return '<1%';
-  return f(lo) === f(hi) ? `${f(hi)}%` : `${f(lo)}〜${f(hi)}%`;
-}
-
 interface PanelProps {
   hand?: { cards: string[]; cls: string } | null;
   index: PreflopIndex;
@@ -34,7 +27,6 @@ interface PanelProps {
   canUndo: boolean;
 }
 
-const pct = (x: number) => (x > 0 && x < 0.001 ? '<0.1%' : `${(100 * x).toFixed(x > 0 && x < 0.1 ? 1 : 0)}%`);
 
 function kindOf(code: string): 'fold' | 'call' | 'raise' {
   return code === 'f' ? 'fold' : code === 'c' || code === 'x' ? 'call' : 'raise';
