@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   STACK_FILTERS,
+  STAKES,
   TABLE_SIZES,
   actionLabel,
   apply,
@@ -10,6 +11,7 @@ import {
   seatNames,
   type PreflopIndex,
   type StackFilter,
+  type Stake,
   type State,
 } from '@/lib/engine';
 
@@ -27,18 +29,36 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [n, setN] = useState<number>(9);
   const [stack, setStack] = useState<StackFilter>('all');
+  const [stake, setStake] = useState<Stake>('all');
   const [steps, setSteps] = useState<Step[]>([{ state: initState(9), text: '' }]);
   const [picked, setPicked] = useState<number | null>(null);
+  const cache = useRef(new Map<Stake, PreflopIndex>());
 
+  // ステークを変えるたびに、その索引を読む（一度読んだものは持っておく）
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}data/preflop.json`)
+    const hit = cache.current.get(stake);
+    if (hit) {
+      setIndex(hit);
+      return;
+    }
+    let alive = true;
+    setIndex(null);
+    setError(null);
+    const file = STAKES.find((s) => s.id === stake)!.file;
+    fetch(`${import.meta.env.BASE_URL}data/${file}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<PreflopIndex>;
       })
-      .then(setIndex)
-      .catch((e: unknown) => setError(String(e)));
-  }, []);
+      .then((d) => {
+        cache.current.set(stake, d);
+        if (alive) setIndex(d);
+      })
+      .catch((e: unknown) => alive && setError(String(e)));
+    return () => {
+      alive = false;
+    };
+  }, [stake]);
 
   const state = steps[steps.length - 1].state;
   const cands = useMemo(() => candidates(state), [state]);
@@ -84,6 +104,13 @@ export function App() {
             </button>
           ))}
         </div>
+        <div className="seg" role="group" aria-label="ステーク">
+          {STAKES.map((s) => (
+            <button key={s.id} type="button" className={s.id === stake ? 'on' : ''} onClick={() => setStake(s.id)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
         <div className="seg" role="group" aria-label="有効スタック">
           {STACK_FILTERS.map((f) => (
             <button key={f.id} type="button" className={f.id === stack ? 'on' : ''} onClick={() => setStack(f.id)}>
@@ -119,7 +146,8 @@ export function App() {
       </main>
 
       <footer className="foot">
-        データ: HandHQ のオンライン・キャッシュのハンド履歴（2009 年 7 月、PokerStars 50NL）を
+        データ: HandHQ のオンライン・キャッシュのハンド履歴（2009 年 7 月、PokerStars のノーリミット 25NL〜1000NL、
+        {index ? `この選択は ${index.meta.hands.toLocaleString()} ハンド` : '読み込み中'}）を
         <a href="https://github.com/uoftcprg/phh-dataset">トロント大学の PHH データセット</a>
         （CC BY 4.0）から集計。手札は伏せられているので、頻度は「全員の」行動です。
       </footer>

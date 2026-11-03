@@ -18,6 +18,16 @@ export function seatNames(n: number): string[] {
   return [...LABELS[n], 'SB', 'BB'];
 }
 
+/** ステークごとの索引ファイル（public/data/）。ステークが違うと傾向が違うので別々に持つ。 */
+export type Stake = 'all' | '25' | '50' | '200' | '400';
+export const STAKES: { id: Stake; label: string; file: string }[] = [
+  { id: 'all', label: 'すべて', file: 'preflop-all.json' },
+  { id: '25', label: '25NL', file: 'preflop-25.json' },
+  { id: '50', label: '50NL', file: 'preflop-50.json' },
+  { id: '200', label: '200NL', file: 'preflop-200.json' },
+  { id: '400', label: '400NL〜', file: 'preflop-400.json' },
+];
+
 export type StackFilter = 'all' | 's<35' | 's35-70' | 's70-130' | 's130+';
 export const STACK_FILTERS: { id: StackFilter; label: string }[] = [
   { id: 'all', label: 'すべて' },

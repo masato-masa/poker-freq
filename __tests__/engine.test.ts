@@ -11,12 +11,14 @@ import {
   liveSeats,
   lookup,
   options,
+  STAKES,
   summarize,
   total,
   type PreflopIndex,
 } from '@/lib/engine';
 
-const idx: PreflopIndex = JSON.parse(readFileSync('public/data/preflop.json', 'utf8'));
+const load = (file: string): PreflopIndex => JSON.parse(readFileSync(`public/data/${file}`, 'utf8'));
+const idx = load('preflop-all.json');
 
 describe('状態機械', () => {
   it('最初は全員が動ける(UTG から BB まで)', () => {
@@ -86,9 +88,16 @@ describe('状態機械', () => {
 });
 
 describe('索引の引き方', () => {
-  it('最初の席は 9 人テーブルで 8 万回以上の判断がある', () => {
+  it('最初の席は 9 人テーブルで 100 万回以上の判断がある', () => {
     const c = lookup(idx, 'S', initState(9), 0, 'all');
-    expect(total(c)).toBeGreaterThan(80000);
+    expect(total(c)).toBeGreaterThan(1_000_000);
+  });
+
+  it('ステーク別の索引は、合わせるとすべてと同じ回数になる', () => {
+    const sum = STAKES.filter((s) => s.id !== 'all')
+      .map((s) => total(lookup(load(s.file), 'S', initState(9), 0, 'all')))
+      .reduce((a, b) => a + b, 0);
+    expect(sum).toBe(total(lookup(idx, 'S', initState(9), 0, 'all')));
   });
 
   it('UTG のフォールド率は 6 割〜9 割、レイズは 1 割前後', () => {
