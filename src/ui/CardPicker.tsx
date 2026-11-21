@@ -48,6 +48,7 @@ export function CardPicker({ title, need, used, onDone }: CardPickerProps) {
                   className={picked.includes(c) ? 'on' : ''}
                   disabled={off}
                   aria-label={showCard(c)}
+                  data-s={SUIT_MARK[s]}
                   onClick={() => toggle(c)}
                 >
                   {r === 'T' ? '10' : r}

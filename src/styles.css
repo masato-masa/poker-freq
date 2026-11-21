@@ -71,7 +71,7 @@ button {
 .seg button {
   flex: 1 1 auto;
   min-width: 48px;
-  height: 34px;
+  height: 44px;
   padding: 0 10px;
   white-space: nowrap;
   border: 0;
@@ -288,7 +288,7 @@ button {
 .row {
   position: relative;
   width: 100%;
-  height: 42px;
+  height: 44px;
   padding: 0 12px;
   display: flex;
   align-items: center;
@@ -340,7 +340,7 @@ button {
 }
 .actions button {
   flex: 1;
-  height: 40px;
+  height: 44px;
   border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--panel-2);
@@ -470,14 +470,29 @@ button {
   opacity: 0.25;
   cursor: default;
 }
-@media (max-width: 420px) {
+@media (max-width: 520px) {
+  /* 指で押せる 44px を守るため、1 スートを 7 枚 + 6 枚の 2 行に折る */
   .prow {
-    grid-template-columns: 18px repeat(13, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 2px;
   }
+  .picker {
+    margin: 0 -6px;
+  }
+  .prow .smark {
+    display: none;
+  }
   .prow button {
-    height: 34px;
-    font-size: 11px;
+    height: 44px;
+    font-size: 15px;
+  }
+  .prow button::after {
+    content: attr(data-s);
+    font-size: 12px;
+    margin-left: 1px;
+  }
+  .picker {
+    gap: 10px;
   }
 }
 
@@ -489,7 +504,7 @@ button {
 }
 .handbtn {
   flex: 1;
-  height: 40px;
+  height: 44px;
   border-radius: 10px;
   border: 1px dashed var(--gold);
   background: transparent;
@@ -507,7 +522,7 @@ button {
   letter-spacing: 0.04em;
 }
 .handclear {
-  height: 40px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 10px;
   border: 1px solid var(--line);
