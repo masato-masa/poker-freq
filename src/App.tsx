@@ -62,14 +62,40 @@ interface Step {
 
 const newGame = (n: number): Step[] => [{ game: { pre: initState(n), post: null }, text: '', events: [] }];
 
+/** 前に選んだ条件（人数・ステーク・スタック）を覚えておく。保存できない環境では毎回初期値。 */
+const SETTINGS_KEY = 'pokerfreq:settings:v1';
+function loadSettings(): { n: number; stack: StackFilter; stake: Stake } {
+  const def = { n: 9, stack: 'all' as StackFilter, stake: 'all' as Stake };
+  try {
+    const p = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null') as { n?: number; stack?: string; stake?: string } | null;
+    if (!p) return def;
+    return {
+      n: TABLE_SIZES.includes(p.n as never) ? (p.n as number) : def.n,
+      stack: STACK_FILTERS.some((f) => f.id === p.stack) ? (p.stack as StackFilter) : def.stack,
+      stake: STAKES.some((x) => x.id === p.stake) ? (p.stake as Stake) : def.stake,
+    };
+  } catch {
+    return def;
+  }
+}
+
 export function App() {
+  const init = useMemo(loadSettings, []);
+  const [condOpen, setCondOpen] = useState(false);
   const [index, setIndex] = useState<PreflopIndex | null>(null);
   const [postIndex, setPostIndex] = useState<PostIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [n, setN] = useState<number>(9);
-  const [stack, setStack] = useState<StackFilter>('all');
-  const [stake, setStake] = useState<Stake>('all');
-  const [steps, setSteps] = useState<Step[]>(newGame(9));
+  const [n, setN] = useState<number>(init.n);
+  const [stack, setStack] = useState<StackFilter>(init.stack);
+  const [stake, setStake] = useState<Stake>(init.stake);
+  const [steps, setSteps] = useState<Step[]>(() => newGame(init.n));
+  useEffect(() => {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ n, stack, stake }));
+    } catch {
+      /* 保存できなくても使える */
+    }
+  }, [n, stack, stake]);
   const [picked, setPicked] = useState<number | null>(null);
   /** 自分の手札（2 枚）。履歴には含めず、どの局面でも保つ */
   const [hand, setHand] = useState<string[] | null>(null);
@@ -344,28 +370,41 @@ export function App() {
         <p className="sub">人間のプレイ（実データ）では、この場面で何が選ばれたか</p>
       </header>
 
-      <section className="controls" aria-label="設定">
-        <div className="seg" role="group" aria-label="テーブル人数">
-          {TABLE_SIZES.map((size) => (
-            <button key={size} type="button" className={size === n ? 'on' : ''} onClick={() => changeSize(size)}>
-              {size}人
-            </button>
-          ))}
-        </div>
-        <div className="seg" role="group" aria-label="ステーク">
-          {STAKES.map((s) => (
-            <button key={s.id} type="button" className={s.id === stake ? 'on' : ''} onClick={() => setStake(s.id)}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <div className="seg" role="group" aria-label="有効スタック">
-          {STACK_FILTERS.map((f) => (
-            <button key={f.id} type="button" className={f.id === stack ? 'on' : ''} onClick={() => setStack(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+      <section className="controls" aria-label="条件">
+        <button type="button" className="condbtn" aria-expanded={condOpen} onClick={() => setCondOpen((v) => !v)}>
+          <span className="condlabel">条件</span>
+          <span className="condval">
+            {n}人・{stake === 'all' ? '全ステーク' : STAKES.find((x) => x.id === stake)!.label}・{stack === 'all' ? '全スタック' : STACK_FILTERS.find((f) => f.id === stack)!.label}
+          </span>
+          <span className="condarrow" aria-hidden>
+            {condOpen ? '▴' : '▾'}
+          </span>
+        </button>
+        {condOpen && (
+          <>
+            <div className="seg" role="group" aria-label="テーブル人数">
+              {TABLE_SIZES.map((size) => (
+                <button key={size} type="button" className={size === n ? 'on' : ''} onClick={() => changeSize(size)}>
+                  {size}人
+                </button>
+              ))}
+            </div>
+            <div className="seg" role="group" aria-label="ステーク">
+              {STAKES.map((s) => (
+                <button key={s.id} type="button" className={s.id === stake ? 'on' : ''} onClick={() => setStake(s.id)}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="seg" role="group" aria-label="有効スタック">
+              {STACK_FILTERS.map((f) => (
+                <button key={f.id} type="button" className={f.id === stack ? 'on' : ''} onClick={() => setStack(f.id)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       <div className="handbar">
