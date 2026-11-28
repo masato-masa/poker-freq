@@ -226,12 +226,12 @@ button {
   position: absolute;
   right: -8px;
   top: -8px;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #f3efe3;
   color: #20180a;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   display: grid;
   place-items: center;
@@ -477,6 +477,16 @@ button {
   }
   .picker {
     gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  /* 320px 幅では 7 列が 37px に縮むので、パネルの余白まで使って 44px を守る */
+  .picker {
+    margin: 0 -14px;
+  }
+  .prow {
+    gap: 1px;
   }
 }
 
