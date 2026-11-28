@@ -191,9 +191,7 @@ button {
   cursor: default;
 }
 .seat.cand {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 0 rgba(224, 169, 42, 0.6);
-  animation: pulse 1.8s ease-out infinite;
+  border-color: var(--gold); /* 押せる席。点滅はやめた（枠だけで足りる） */
 }
 .seat.sel {
   background: var(--gold);
@@ -239,20 +237,6 @@ button {
   place-items: center;
   border: 2px solid var(--gold);
 }
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(224, 169, 42, 0.55);
-  }
-  100% {
-    box-shadow: 0 0 0 10px rgba(224, 169, 42, 0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .seat.cand {
-    animation: none;
-  }
-}
-
 /* ---- 頻度パネル ---- */
 .panel {
   background: var(--panel);
