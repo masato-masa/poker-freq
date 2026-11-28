@@ -571,3 +571,10 @@ button {
   color: var(--gold-hi);
   font-size: 14px;
 }
+
+/* スマホ: 円卓を少し横長にして、席をタップしたとき結果（フォールド何％）が最初の画面に入るようにする（PF-UI） */
+@media (max-width: 520px) {
+  .table {
+    aspect-ratio: 1 / 0.74;
+  }
+}

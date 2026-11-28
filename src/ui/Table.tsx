@@ -41,7 +41,7 @@ export function Table({ view, onPick }: TableProps) {
             </div>
           )}
           <span className={status ? 'done' : 'hint'}>
-            {status || (board.length > 0 ? '席をタップして頻度を見る' : '席をタップして、そのポジションの頻度を見る')}
+            {status || (board.length > 0 ? '席をタップして頻度を見る' : '席をタップして頻度を見る')}
           </span>
         </div>
         {names.map((name, i) => {
